@@ -15,6 +15,7 @@ export const useConfigStore = defineStore('config', () => {
 	const currentTheme = ref<Theme | null>(null);
 	const availableThemes = ref<Record<string, Theme>>({});
 	const devBackgroundImages = ref<BackgroundImage[]>([]);
+	const devBackgroundImagesLoaded = ref(false);
 
 	async function loadAllThemes(): Promise<Record<string, Theme>> {
 		try {
@@ -30,9 +31,9 @@ export const useConfigStore = defineStore('config', () => {
 	async function loadDevBackgroundImages() {
 		try {
 			const response = await fetch('/backgrounds/backgrounds.json');
-			console.log()
 			const data = await response.json();
 			devBackgroundImages.value = data.images;
+			devBackgroundImagesLoaded.value = true;
 		} catch (error) {
 			console.error('Failed to load background images', error);
 		}
@@ -40,15 +41,20 @@ export const useConfigStore = defineStore('config', () => {
 
 	async function getCurrentBackgroundImage(): Promise<BackgroundImage | null> {
 		const selectedImageId = settings.value.background.selectedImage;
-		console.log(selectedImageId);
+
 		if (settings.value.background.type === 'image' && selectedImageId) {
-			console.log(devBackgroundImages.value);
-			const selectedImage = devBackgroundImages.value.find(image => image.id === selectedImageId);
-			console.log('Selected image:', selectedImage);
+			if (!devBackgroundImagesLoaded.value) await loadDevBackgroundImages();
+			const selectedImage = devBackgroundImages.value.find(img => img.id === selectedImageId);
+			console.log(`Selected image: ${selectedImage?.src}`);
 			return selectedImage || null;
 		} else if (settings.value.background.type === 'custom') {
-			console.log('Custom image:', settings.value.background.customImage);
+			console.log(`Custom image: ${settings.value.background.customImage?.src}`);
 			return settings.value.background.customImage || null;
+		} else if (settings.value.background.type === 'random') {
+			if (!devBackgroundImagesLoaded.value) await loadDevBackgroundImages();
+			const imagesArray = Object.values(devBackgroundImages.value);
+			const randomImage = imagesArray[Math.floor(Math.random() * imagesArray.length)];
+			return randomImage || null;
 		}
 		return null;
 	}
@@ -169,7 +175,7 @@ export const useConfigStore = defineStore('config', () => {
 
 		// Set the default background image if none is selected
 		if (settings.value.background.type === 'image' && !settings.value.background.selectedImage) {
-			const defaultImage = devBackgroundImages.value[0];
+			const defaultImage = Object.values(devBackgroundImages.value)[0];
 			if (defaultImage?.id) {
 				settings.value.background.selectedImage = defaultImage.id;
 			}
@@ -180,7 +186,7 @@ export const useConfigStore = defineStore('config', () => {
 
 	function setCurrentImage(imageUrl: string) {
 		if (settings.value.background.type === 'image') {
-			const selectedImage = devBackgroundImages.value.find(image => image.src === imageUrl);
+			const selectedImage = Object.values(devBackgroundImages.value).find(image => image.src === imageUrl);
 			if (selectedImage && selectedImage.id) {
 				settings.value.background.selectedImage = selectedImage.id;
 				saveSettings();
@@ -203,22 +209,28 @@ export const useConfigStore = defineStore('config', () => {
 		{ deep: true },
 	);
 
-	loadSettings();
-	loadDevBackgroundImages();
-	reloadThemes();
+	async function init() {
+		await loadDevBackgroundImages();
+		await loadSettings();
+		await reloadThemes();
+	}
+
+	init();
 
 	return {
 		settings,
 		currentTheme,
 		availableThemes,
 		devBackgroundImages,
+		devBackgroundImagesLoaded,
 		getCurrentBackgroundImage,
+		loadDevBackgroundImages,
 		setTheme,
 		getCurrentTheme,
 		validateTheme,
 		loadSettings,
 		saveSettings,
-		// resetSettings,
+		resetSettings,
 		reloadThemes,
 		setCurrentImage,
 		setCustomImage,

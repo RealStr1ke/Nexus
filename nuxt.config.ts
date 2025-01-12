@@ -7,5 +7,5 @@ export default defineNuxtConfig({
 		'~/assets/styles/main.css',
 	],
 	devtools: { enabled: true },
-	modules: ['@nuxtjs/tailwindcss', '@nuxt/icon'],
+	modules: ['@nuxtjs/tailwindcss', '@nuxt/icon', "@nuxtjs/device"],
 });

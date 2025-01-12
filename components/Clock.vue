@@ -1,12 +1,12 @@
 <template>
-	<div class="clock-container">
-		<div class="time">
+	<div class="text-center mb-3 shadow-lg backdrop-blur-lg bg-white/20 rounded-md">
+		<div class="text-8xl font-bold drop-shadow-lg">
 			{{ formattedTime }}
 		</div>
-		<div class="date">
+		<div class="text-xl font-bold drop-shadow-lg">
 			{{ formattedDate }}
 		</div>
-		<div class="greeting">
+		<div class="text-base font-bold drop-shadow-lg mt-1">
 			{{ greeting }}
 		</div>
 	</div>
@@ -52,28 +52,3 @@ onMounted(() => {
 	onUnmounted(() => clearInterval(interval));
 });
 </script>
-
-<style scoped>
-.clock-container {
-	text-align: center;
-	margin-bottom: 0.5rem;
-	text-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
-}
-
-.time {
-	font-size: 6rem;
-	font-weight: bold;
-}
-
-.date {
-	font-size: 1.25rem;
-	font-weight: bold;
-	/* margin-top: 0.25rem; */
-}
-
-.greeting {
-	font-size: 1rem;
-	font-weight: bold;
-	/* margin-top: 0.5rem; */
-}
-</style>

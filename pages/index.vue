@@ -1,7 +1,17 @@
 <template>
-	<div :style="backgroundStyle" class="h-screen flex items-center justify-center">
-		<div class="w-2/5">
-			<SearchBar />
+	<div
+		:style="backgroundStyle"
+		class="h-screen flex flex-col justify-center items-center relative"
+	>
+		<div class="w-1/2">
+			<Clock />
+			<Search />
+		</div>
+		<div
+			v-if="artistCredit"
+			class="absolute bottom-4 left-4 text-white text-sm shadow-lg drop-shadow-lg"
+		>
+			{{ artistCredit }}
 		</div>
 	</div>
 </template>
@@ -9,13 +19,14 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import { useConfigStore } from '@/stores/config';
+import Clock from '~/components/Clock.vue';
 
 const configStore = useConfigStore();
 const backgroundStyle = ref({});
+const artistCredit = ref('');
 
 onMounted(async () => {
 	const backgroundImage = await configStore.getCurrentBackgroundImage();
-	console.log(backgroundImage);
 	if (backgroundImage) {
 		backgroundStyle.value = {
 			backgroundImage: `url(${backgroundImage.src})`,
@@ -23,10 +34,11 @@ onMounted(async () => {
 			backgroundPosition: 'center',
 			backgroundRepeat: 'no-repeat',
 		};
+		artistCredit.value = `Credit: ${backgroundImage.credit}`;
 	}
 });
 </script>
 
 <style>
-/* Add any custom styles here */
+
 </style>

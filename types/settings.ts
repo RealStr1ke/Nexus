@@ -25,7 +25,7 @@ export interface Settings {
 		}>
 	}
 	background: {
-		type: 'image' | 'custom'
+		type: 'image' | 'custom' | 'random'
 		selectedImage?: string // ID of the selected image
 		customImage?: BackgroundImage
 		showArtistCredits: boolean
@@ -62,8 +62,7 @@ export const defaultSettings: Settings = {
 		defaultEngine: 'google',
 	},
 	background: {
-		type: 'image',
-		selectedImage: 'kirokaze-attack.gif',
+		type: 'random',
 		showArtistCredits: true,
 	},
 	integrations: {

@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<label class="input input-bordered flex items-center gap-2 min-w-0">
+		<label class="input input-bordered flex items-center gap-2 min-w-0 drop-shadow-lg shadow-lg">
 			<button
 				class="btn btn-ghost btn-sm"
 				@click="performSearch"
@@ -88,11 +88,5 @@ function performSearch() {
 </script>
 
 <style>
-.input {
-	box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
-}
 
-.search-input {
-	text-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.5);
-}
 </style>
