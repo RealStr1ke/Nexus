@@ -4,6 +4,8 @@ import type { Theme } from '@/types/theme';
 import { validateTheme, defaultLightTheme, defaultDarkTheme } from '@/types/theme';
 import type { Settings } from '@/types/settings';
 import { defaultSettings, validateSettings } from '@/types/settings';
+import type { BackgroundImage } from '@/types/images';
+import { validateBackgroundImage } from '@/types/images';
 
 const STORAGE_KEY = 'nexus-settings';
 
@@ -12,16 +14,41 @@ export const useConfigStore = defineStore('config', () => {
 
 	const currentTheme = ref<Theme | null>(null);
 	const availableThemes = ref<Record<string, Theme>>({});
+	const devBackgroundImages = ref<BackgroundImage[]>([]);
 
 	async function loadAllThemes(): Promise<Record<string, Theme>> {
 		try {
-			const response = await fetch('/assets/themes.json');
+			const response = await fetch('/themes/themes.json');
 			const data = await response.json();
 			return data.themes;
 		} catch (error) {
 			console.error('Failed to load themes', error);
 			return {};
 		}
+	}
+
+	async function loadDevBackgroundImages() {
+		try {
+			const response = await fetch('/backgrounds/backgrounds.json');
+			const data = await response.json();
+			devBackgroundImages.value = data.images;
+		} catch (error) {
+			console.error('Failed to load background images', error);
+		}
+	}
+
+	async function getCurrentBackgroundImage(): Promise<BackgroundImage | null> {
+		const selectedImageId = settings.value.background.selectedImage;
+		console.log(selectedImageId);
+		if (settings.value.background.type === 'image' && selectedImageId) {
+			const selectedImage = devBackgroundImages.value.find(image => image.id === selectedImageId);
+			console.log('Selected image:', selectedImage);
+			return selectedImage || null;
+		} else if (settings.value.background.type === 'custom') {
+			console.log('Custom image:', settings.value.background.customImage);
+			return settings.value.background.customImage || null;
+		}
+		return null;
 	}
 
 	async function reloadThemes() {
@@ -82,28 +109,50 @@ export const useConfigStore = defineStore('config', () => {
 		return getTheme(themeName, settings.value.theme.presetTheme, settings.value.theme.customTheme);
 	}
 
-	function loadSettings() {
-		try {
-			const stored = localStorage.getItem(STORAGE_KEY);
-			if (stored) {
-				const parsedSettings = JSON.parse(stored);
+	function saveSettings() {
+		if (typeof window !== 'undefined' && validateSettings(settings.value)) {
+			console.log('Saving settings...');
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(settings.value));
+			console.log('Settings saved');
+		} else {
+			console.error('Invalid settings, not saving');
+		}
+	}
 
-				if (validateSettings(parsedSettings)) {
-					// Merge with defaults to ensure all fields exist
-					settings.value = {
-						...defaultSettings,
-						...parsedSettings,
-					};
+	function resetSettings() {
+		settings.value = defaultSettings;
+		saveSettings();
+		console.log('Settings reset to defaults');
+	}
+
+	function loadSettings() {
+		console.log('Loading settings...');
+		if (typeof window !== 'undefined') {
+			try {
+				const stored = localStorage.getItem(STORAGE_KEY);
+				if (stored) {
+					const parsedSettings = JSON.parse(stored);
+
+					if (validateSettings(parsedSettings)) {
+						// Merge with defaults to ensure all fields exist
+						settings.value = {
+							...defaultSettings,
+							...parsedSettings,
+						};
+					} else {
+						console.error('Invalid settings format, using defaults');
+						settings.value = defaultSettings;
+					}
 				} else {
-					console.error('Invalid settings format, using defaults');
 					settings.value = defaultSettings;
 				}
-			} else {
+				console.log('Retrieved settings from local storage');
+			} catch (error) {
+				console.error('Failed to parse stored settings, using defaults:', error);
 				settings.value = defaultSettings;
 			}
-		} catch (error) {
-			console.error('Failed to parse stored settings, using defaults:', error);
-			settings.value = defaultSettings;
+		} else {
+			console.error('Window object not available, using defaults');
 		}
 
 		// Set the current theme based on the loaded settings
@@ -115,42 +164,32 @@ export const useConfigStore = defineStore('config', () => {
 		} else {
 			setTheme(themeName, settings.value.theme.presetTheme, settings.value.theme.customTheme);
 		}
+
+		// Set the default background image if none is selected
+		if (settings.value.background.type === 'image' && !settings.value.background.selectedImage) {
+			const defaultImage = devBackgroundImages.value[0];
+			if (defaultImage?.id) {
+				settings.value.background.selectedImage = defaultImage.id;
+			}
+		}
+		console.log('Settings loaded');
+		// resetSettings(); // for development
 	}
 
-	function saveSettings() {
-		if (validateSettings(settings.value)) {
-			console.log('Saving settings...');
-			try {
-				const stored = localStorage.getItem(STORAGE_KEY);
-				if (stored) {
-					const oldSettings = JSON.parse(stored);
-					const flattenObject = (obj: any, prefix = '') => {
-						return Object.keys(obj).reduce((acc: Record<string, any>, key) => {
-							const value = obj[key];
-							const newKey = prefix ? `${prefix}.${key}` : key;
-							if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-								Object.assign(acc, flattenObject(value, newKey));
-							} else {
-								acc[newKey] = value;
-							}
-							return acc;
-						}, {});
-					};
-					const oldFlat = flattenObject(oldSettings);
-					const newFlat = flattenObject(settings.value);
-					Object.keys(newFlat).forEach(key => {
-						if (oldFlat[key] !== newFlat[key] && typeof newFlat[key] !== 'object') {
-							console.log(`Config change: ${key} = ${oldFlat[key]} → ${newFlat[key]}`);
-						}
-					});
-				}
-			} catch (error) {
-				console.error('Failed to compare settings:', error);
+	function setCurrentImage(imageUrl: string) {
+		if (settings.value.background.type === 'image') {
+			const selectedImage = devBackgroundImages.value.find(image => image.src === imageUrl);
+			if (selectedImage && selectedImage.id) {
+				settings.value.background.selectedImage = selectedImage.id;
+				saveSettings();
 			}
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(settings.value));
-			console.log('Settings saved');
-		} else {
-			console.error('Invalid settings, not saving');
+		}
+	}
+
+	function setCustomImage(image: BackgroundImage) {
+		if (settings.value.background.type === 'custom' && validateBackgroundImage(image)) {
+			settings.value.background.customImage = image;
+			saveSettings();
 		}
 	}
 
@@ -163,17 +202,23 @@ export const useConfigStore = defineStore('config', () => {
 	);
 
 	loadSettings();
+	loadDevBackgroundImages();
 	reloadThemes();
 
 	return {
 		settings,
 		currentTheme,
 		availableThemes,
+		devBackgroundImages,
+		getCurrentBackgroundImage,
 		setTheme,
 		getCurrentTheme,
 		validateTheme,
 		loadSettings,
 		saveSettings,
+		// resetSettings,
 		reloadThemes,
+		setCurrentImage,
+		setCustomImage,
 	};
 });

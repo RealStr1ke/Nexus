@@ -1,4 +1,6 @@
 import type { Theme } from '@/types/theme';
+import type { BackgroundImage } from '@/types/images';
+
 export interface Settings {
 	general: {
 		layout: 'grid' | 'list'
@@ -23,10 +25,10 @@ export interface Settings {
 		}>
 	}
 	background: {
-		type: 'solid' | 'image' | 'slideshow'
-		color: string
-		interval?: number
-		// todo: impl images
+		type: 'image' | 'custom'
+		selectedImage?: string // ID of the selected image
+		customImage?: BackgroundImage
+		showArtistCredits: boolean
 	}
 	integrations: {
 		spotify: {
@@ -60,8 +62,9 @@ export const defaultSettings: Settings = {
 		defaultEngine: 'google',
 	},
 	background: {
-		type: 'solid',
-		color: '#FFFFFF',
+		type: 'image',
+		selectedImage: 'kirokaze-attack.gif',
+		showArtistCredits: true,
 	},
 	integrations: {
 		spotify: {
@@ -89,4 +92,4 @@ export const validateSettings = (settings: unknown): settings is Settings => {
 	return requiredKeys.every(key =>
 		key in settings && typeof (settings as any)[key] === 'object',
 	);
-}
+};
