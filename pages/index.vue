@@ -4,8 +4,8 @@
 		class="h-screen flex flex-col justify-center items-center relative"
 	>
 		<div class="w-1/2">
-			<Clock />
-			<Search />
+			<ClockDate />
+			<SearchBar />
 		</div>
 		<div
 			v-if="artistCredit"
@@ -19,7 +19,7 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import { useConfigStore } from '@/stores/config';
-import Clock from '~/components/Clock.vue';
+import Clock from '~/components/ClockDate.vue';
 
 const configStore = useConfigStore();
 const backgroundStyle = ref({});
