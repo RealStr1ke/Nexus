@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import axios from 'axios';
+// import axios from 'axios';
 
 const pics = {
 	'1041uuu': ['bridge.webp', 'brightgirlcity.webp', 'cattrain.webp', 'coffeeshop.webp', 'dogcatchase.webp', 'japanbridge.webp', 'japancars.webp', 'japancity.webp', 'japancityfall.webp', 'japancityriver.webp', 'japancityspring.webp', 'japancitytall.webp', 'japanfall.webp', 'japanfishstore.webp', 'japanresuturant.webp', 'japanriver.webp', 'japanrivergirl.webp', 'japantrain.webp', 'japanwarmbed.webp', 'koi.webp', 'kois.webp', 'milk.webp', 'peacefulgarden.webp', 'plants.mp4', 'plants2.mp4', 'rainbow.webp', 'raingyudon.webp', 'ramen.webp', 'sakura.webp', 'schoolgirls.webp', 'smallroom.webp', 'soda.webp', 'sushibar.webp', 'techgirl.webp', 'train.webp', 'wintertrain.webp'],
@@ -24,49 +24,37 @@ const pics = {
 	yaleiSyu: ['Girl_sleeping.gif', 'adventure_fireplace.gif', 'animegirl_fight.gif', 'aquarium.gif', 'beach_chillin.gif', 'butterfly_garden.gif', 'cafe_girl.gif', 'cat_desk.gif', 'cat_guitar.gif', 'cat_stand.gif', 'chillroom.gif', 'christmas_couple1.gif', 'christmas_couple2.gif', 'christmas_couple3.gif', 'christmas_couple_fireplace.gif', 'city_overlook.gif', 'cooking_show.gif', 'cute_cafe.gif', 'demon_alter.gif', 'dogs.gif', 'dragon_friends.gif', 'easter_couple.gif', 'eve_fireplace.gif', 'fireworks_couple.gif', 'flower_girl.gif', 'frieren1.gif', 'frieren2.gif', 'girl_bar.gif', 'girl_bus.gif', 'girl_cafe.gif', 'girl_computer.gif', 'girl_computer2.gif', 'girl_forest.gif', 'girl_melonsoda.gif', 'girl_room.gif', 'girl_walking.webp', 'girl_workshop.gif', 'halloween_couple.gif', 'halloweengirl.gif', 'hotgirl_garden.gif', 'ipad_girl.gif', 'japanesestore.gif', 'loading.gif', 'magicbook.gif', 'man_fox.gif', 'mermaid.gif', 'mushrooms.gif', 'night_walk.gif', 'paint_couple.gif', 'pirates.gif', 'rain_girl.gif', 'red_car.gif', 'sleepingforest.gif', 'taiwan_conbini.gif', 'vampgirls.gif'],
 };
 
-const baseUrl = 'https://8bitdash.com/splash';
+const baseUrl = 'https://www.8bitdash.com/splash';
 const outputDir = path.join(__dirname, '../public/backgrounds');
 const jsonFilePath = path.join(outputDir, 'backgrounds.json');
 
-async function downloadImage(url: string, outputPath: string) {
-	const writer = fs.createWriteStream(outputPath);
-	const response = await axios({
-		url,
-		method: 'GET',
-		responseType: 'stream',
-	});
-	response.data.pipe(writer);
-	return new Promise((resolve, reject) => {
-		writer.on('finish', resolve);
-		writer.on('error', reject);
-	});
-}
+// Ensure output directory exists
+if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
-async function downloadAllImages() {
-	const backgrounds: { id: string; name: string; src: string; credit?: string }[] = [];
+function createBackgroundsJson() {
+	const backgrounds: Record<string, BackgroundImage> = {};
 
 	for (const [key, images] of Object.entries(pics)) {
-		const dir = path.join(outputDir, key);
-		if (!fs.existsSync(dir)) {
-			fs.mkdirSync(dir, { recursive: true });
-		}
-
 		for (const image of images) {
-			const url = `${baseUrl}/${key}/${image}`;
-			const outputPath = path.join(dir, image);
-			await downloadImage(url, outputPath);
-			console.log(`Downloaded ${image} from ${key}.`);
-			backgrounds.push({
-				id: `${key}-${image}`,
+			const id = `${key}-${image}`;
+			backgrounds[id] = {
+				id,
 				name: image,
-				src: `assets/images/backgrounds/${key}/${image}`,
+				src: `${baseUrl}/${key}/${image}`,
 				credit: key,
-			});
+			};
 		}
 	}
 
-	fs.writeFileSync(jsonFilePath, JSON.stringify({ images: backgrounds }, null, 2));
-	console.log('All images downloaded and JSON file updated.');
+	fs.writeFileSync(jsonFilePath, JSON.stringify({ images: backgrounds }, null, 4));
+	console.log('JSON file created with direct URLs (key-value format).');
 }
 
-downloadAllImages().catch(console.error);
+createBackgroundsJson();
+
+interface BackgroundImage {
+	id: string;
+	name: string;
+	src: string;
+	credit?: string;
+}
